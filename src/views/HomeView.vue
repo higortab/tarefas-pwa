@@ -59,12 +59,12 @@ onMounted(() => {
   store.fetchTasks()
 })
 
-function handleAdd(title) {
-  store.addTask(title)
+function handleAdd(payload) {
+  store.addTask(payload);
 }
 
-function handleUpdate(id, title, imgAttachmentKey) {
-  store.updateTask(id, { title, imgAttachmentKey })
+function handleUpdate(id, payload) {
+  store.updateTask(id, payload)
   editingTask.value = null
 }
 

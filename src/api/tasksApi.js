@@ -5,8 +5,10 @@ const tasksApi = {
     return apiClient.get('/tasks')
   },
 
-  create(title) {
-    return apiClient.post('/tasks', { title })
+  create({ title, imgAttachmentKey } = {}) {
+    const body = { title }
+    if (imgAttachmentKey != null) body.img_attachment_key = imgAttachmentKey
+    return apiClient.post('/tasks', body)
   },
 
   update(id, data) {
