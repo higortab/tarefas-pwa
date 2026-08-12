@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import OfflineBanner from './components/OfflineBanner.vue'
 import NotificationPrompt from './components/NotificationPrompt.vue'
@@ -21,26 +21,30 @@ const authStore = useAuthStore()
 // Re-fetch automático quando o usuário clica em uma notificação e foca o app
 function onSwMessage(event) {
   if (event.data?.type === 'PUSH_NOTIFICATION_CLICKED') {
-    tasksStore.fetchTasks() //
+    tasksStore.fetchTasks()
   }
 }
 
-onMounted(async () => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', onSwMessage)
+function ensurePushSubscription() {
+  if (
+    !authStore.isAuthenticated ||
+    !('serviceWorker' in navigator) ||
+    !('Notification' in window) ||
+    Notification.permission !== 'granted'
+  ) {
+    return
   }
 
-  // Se autenticado + permissão granted + sem endpoint local → re-subscribe silenciosamente
-  if (
-    authStore.isAuthenticated &&
-    'serviceWorker' in navigator &&
-    'Notification' in window &&
-    Notification.permission === 'granted' &&
-    !localStorage.getItem('push_endpoint') //
-  ) {
-    navigator.serviceWorker.ready
-      .then((reg) => authStore.subscribe(reg))
-      .catch(() => {})
+  navigator.serviceWorker.ready
+    .then((reg) => authStore.subscribe(reg))
+    .catch(() => {})
+}
+
+watch(() => authStore.isAuthenticated, ensurePushSubscription, { immediate: true })
+
+onMounted(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', onSwMessage)
   }
 })
 

@@ -17,21 +17,34 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
 const visible = ref(false)
 const authStore = useAuthStore()
+let promptTimer = null
 
-onMounted(() => {
+function maybeShowPrompt() {
+  clearTimeout(promptTimer)
+
   if (
     authStore.isAuthenticated &&
     'Notification' in window &&
-    Notification.permission === 'default' && //
+    Notification.permission === 'default' &&
     !localStorage.getItem('push_prompt_dismissed')
   ) {
-    setTimeout(() => { visible.value = true }, 2000) //
+    promptTimer = setTimeout(() => {
+      visible.value = true
+    }, 2000)
+  } else {
+    visible.value = false
   }
+}
+
+watch(() => authStore.isAuthenticated, maybeShowPrompt, { immediate: true })
+
+onUnmounted(() => {
+  clearTimeout(promptTimer)
 })
 
 async function allow() {
@@ -39,13 +52,13 @@ async function allow() {
   const granted = await authStore.requestPermission()
   if (granted) {
     const reg = await navigator.serviceWorker.ready
-    await authStore.subscribe(reg) //
+    await authStore.subscribe(reg)
   }
 }
 
 function dismiss() {
   visible.value = false
-  localStorage.setItem('push_prompt_dismissed', '1') //
+  localStorage.setItem('push_prompt_dismissed', '1')
 }
 </script>
 

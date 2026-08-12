@@ -31,11 +31,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    await unsubscribe() //
+    await unsubscribe()
     accessToken.value = null
     refreshToken.value = null
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('push_endpoint')
   }
 
   return { accessToken, refreshToken, isAuthenticated, login, logout, requestPermission, subscribe }

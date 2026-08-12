@@ -32,10 +32,14 @@ export function usePushNotifications() {
         vapidKey = data.publicKey
       }
 
-      const subscription = await swRegistration.pushManager.subscribe({
-        userVisibleOnly: true, //
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      })
+      // Reutiliza subscription existente (ex.: após reinício do backend)
+      let subscription = await swRegistration.pushManager.getSubscription()
+      if (!subscription) {
+        subscription = await swRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        })
+      }
 
       // Serializa as chaves de ArrayBuffer para base64
       await api.post('/api/subscriptions', {
