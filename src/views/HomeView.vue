@@ -12,10 +12,15 @@
     <p v-if="store.loading" class="loading-message">Carregando tarefas...</p>
 
     <template v-else>
-      <section v-if="store.pendingTasks.length > 0">
-        <h2 class="section-title">Pendentes ({{ store.pendingTasks.length }})</h2>
+      <label class="location-filter">
+        <input v-model="onlyWithLocation" type="checkbox" />
+        Somente com localização
+      </label>
+
+      <section v-if="pendingTasks.length > 0">
+        <h2 class="section-title">Pendentes ({{ pendingTasks.length }})</h2>
         <TaskItem
-          v-for="task in store.pendingTasks"
+          v-for="task in pendingTasks"
           :key="task.id"
           :task="task"
           @toggle="handleToggle"
@@ -24,10 +29,10 @@
         />
       </section>
 
-      <section v-if="store.completedTasks.length > 0">
-        <h2 class="section-title">Concluídas ({{ store.completedTasks.length }})</h2>
+      <section v-if="completedTasks.length > 0">
+        <h2 class="section-title">Concluídas ({{ completedTasks.length }})</h2>
         <TaskItem
-          v-for="task in store.completedTasks"
+          v-for="task in completedTasks"
           :key="task.id"
           :task="task"
           @toggle="handleToggle"
@@ -36,8 +41,12 @@
         />
       </section>
 
-      <p v-if="store.tasks.length === 0" class="empty-message">
-        Nenhuma tarefa cadastrada. Adicione uma acima.
+      <p v-if="filteredTasks.length === 0" class="empty-message">
+        {{
+          onlyWithLocation
+            ? 'Nenhuma tarefa com localização.'
+            : 'Nenhuma tarefa cadastrada. Adicione uma acima.'
+        }}
       </p>
     </template>
 
@@ -46,7 +55,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import TaskForm from '../components/TaskForm.vue'
 import TaskItem from '../components/TaskItem.vue'
 import InstallButton from '../components/InstallButton.vue'
@@ -54,13 +63,23 @@ import { useTasksStore } from '../stores/tasks.js'
 
 const store = useTasksStore()
 const editingTask = ref(null)
+const onlyWithLocation = ref(false)
+
+const filteredTasks = computed(() =>
+  onlyWithLocation.value
+    ? store.tasks.filter((t) => t.latitude != null)
+    : store.tasks,
+)
+
+const pendingTasks = computed(() => filteredTasks.value.filter((t) => !t.done))
+const completedTasks = computed(() => filteredTasks.value.filter((t) => t.done))
 
 onMounted(() => {
   store.fetchTasks()
 })
 
 function handleAdd(payload) {
-  store.addTask(payload);
+  store.addTask(payload)
 }
 
 function handleUpdate(id, payload) {
@@ -92,6 +111,16 @@ function handleRemove(id) {
   color: #666;
   margin-bottom: 12px;
   margin-top: 20px;
+}
+
+.location-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 8px;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
 }
 
 .empty-message {
